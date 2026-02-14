@@ -4,17 +4,14 @@ const { pool } = require('../../config/database');
 
 const getUserChats = async (req, res, next) => {
   try {
-    // Get all users except current user (for private chat)
-    const allUsersResult = await pool.query(
-      'SELECT id, username, email, avatar, "isOnline", "lastSeen" FROM users WHERE id != $1 ORDER BY "isOnline" DESC, "lastSeen" DESC LIMIT 50',
-      [req.user.userId]
-    );
+    // Get friends only for private chat
+    const friends = await User.getFriends(req.user.userId);
     
     // Get groups
     const groups = await Group.findByMember(req.user.userId);
 
     const chats = {
-      private: allUsersResult.rows.map(user => ({
+      private: friends.map(user => ({
         _id: user.id,
         name: user.username,
         avatar: user.avatar,
