@@ -2,13 +2,13 @@ const { pool } = require('../../config/database');
 
 class Message {
   static async create(messageData) {
-    const { senderId, content, chatType, chatRoomId, image, buttonText, buttonUrl } = messageData;
+    const { senderId, content, chatType, chatRoomId, image, buttonText, buttonUrl, replyToId, isImage } = messageData;
     
     const result = await pool.query(
-      `INSERT INTO messages ("senderId", content, "chatType", "chatRoomId", image, button_text, button_url) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+      `INSERT INTO messages ("senderId", content, "chatType", "chatRoomId", image, button_text, button_url, "replyToId", "isImage") 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
        RETURNING *`,
-      [senderId, content, chatType, chatRoomId, image || null, buttonText || null, buttonUrl || null]
+      [senderId, content, chatType, chatRoomId, image || null, buttonText || null, buttonUrl || null, replyToId || null, isImage || false]
     );
     
     return this.findById(result.rows[0].id);
@@ -56,6 +56,27 @@ class Message {
         avatar: message.avatar,
         role: message.sender_role
       };
+      
+      // Get replyTo message if exists
+      if (message.replyToId) {
+        const replyToResult = await pool.query(
+          `SELECT m.content, u.username, u.avatar 
+           FROM messages m 
+           LEFT JOIN users u ON m."senderId" = u.id 
+           WHERE m.id = $1`,
+          [message.replyToId]
+        );
+        if (replyToResult.rows[0]) {
+          message.replyTo = {
+            id: message.replyToId,
+            content: replyToResult.rows[0].content,
+            sender: {
+              username: replyToResult.rows[0].username,
+              avatar: replyToResult.rows[0].avatar
+            }
+          };
+        }
+      }
     }
     
     return result.rows.reverse();

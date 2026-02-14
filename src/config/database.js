@@ -99,12 +99,34 @@ async function initDatabase() {
         content TEXT NOT NULL,
         "chatType" VARCHAR(20) NOT NULL,
         "chatRoomId" INTEGER NOT NULL,
+        "replyToId" INTEGER REFERENCES messages(id) ON DELETE SET NULL,
         "editedAt" TIMESTAMP,
         "isDeleted" BOOLEAN DEFAULT FALSE,
         "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add replyToId column if it doesn't exist (for existing databases)
+    try {
+      await client.query(`
+        ALTER TABLE messages ADD COLUMN IF NOT EXISTS "replyToId" INTEGER REFERENCES messages(id) ON DELETE SET NULL
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_messages_replytoid ON messages("replyToId")
+      `);
+    } catch (e) {
+      // Ignore if column already exists
+    }
+
+    // Add isImage column if it doesn't exist (for existing databases)
+    try {
+      await client.query(`
+        ALTER TABLE messages ADD COLUMN IF NOT EXISTS "isImage" BOOLEAN DEFAULT FALSE
+      `);
+    } catch (e) {
+      // Ignore if column already exists
+    }
 
     // Create message_reads table
     await client.query(`

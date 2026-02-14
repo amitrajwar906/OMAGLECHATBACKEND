@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { testConnection, initDatabase } = require('./config/database');
+const { testConnection, initDatabase, pool } = require('./config/database');
 const path = require('path');
 require('dotenv').config();
 
@@ -77,6 +77,28 @@ app.use(errorHandler);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Public stats endpoint (no auth required)
+app.get('/api/public/stats', async (req, res) => {
+  try {
+    const userCount = await pool.query('SELECT COUNT(*) as count FROM users');
+    const groupCount = await pool.query('SELECT COUNT(*) as count FROM groups');
+    const messageCount = await pool.query('SELECT COUNT(*) as count FROM messages');
+    const onlineUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE "isOnline" = true');
+    
+    res.json({
+      success: true,
+      data: {
+        totalUsers: parseInt(userCount.rows[0].count),
+        totalGroups: parseInt(groupCount.rows[0].count),
+        totalMessages: parseInt(messageCount.rows[0].count),
+        onlineUsers: parseInt(onlineUsers.rows[0].count)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch stats' });
+  }
 });
 
 module.exports = app;

@@ -133,9 +133,9 @@ const getMessages = async (req, res, next) => {
 
 const sendMessage = async (req, res, next) => {
   try {
-    let { content, chatType, chatRoom, groupId } = req.body;
+    let { content, chatType, chatRoom, groupId, replyToId, isImage } = req.body;
 
-    console.log('sendMessage called:', { content, chatType, chatRoom, groupId, userId: req.user?.userId });
+    console.log('sendMessage called:', { content, chatType, chatRoom, groupId, replyToId, isImage, userId: req.user?.userId });
 
     if (groupId) {
       chatType = 'group';
@@ -171,7 +171,9 @@ const sendMessage = async (req, res, next) => {
       senderId: req.user.userId,
       content,
       chatType,
-      chatRoomId
+      chatRoomId,
+      replyToId: replyToId || null,
+      isImage: isImage || false
     });
 
     console.log('Message created:', message);

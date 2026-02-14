@@ -28,11 +28,15 @@ const validateUpdate = [
   body('bio')
     .optional()
     .isLength({ max: 200 })
-    .withMessage('Bio must be less than 200 characters')
+    .withMessage('Bio must be less than 200 characters'),
+  body('avatar')
+    .optional()
+    .isURL()
+    .withMessage('Avatar must be a valid URL')
 ];
 
 router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
+router.put('/profile', validateUpdate, updateProfile);
 router.get('/search', searchUsers);
 router.get('/online', getOnlineUsers);
 router.post('/friends/:friendId', addFriend);
