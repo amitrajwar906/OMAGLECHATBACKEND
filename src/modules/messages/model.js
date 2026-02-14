@@ -187,6 +187,8 @@ class Message {
         username: message.username,
         avatar: message.avatar
       };
+      message.buttonText = message.button_text;
+      message.buttonUrl = message.button_url;
     }
     
     return result.rows;
